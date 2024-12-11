@@ -15,8 +15,29 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Initialize Package
+- 기본 디스패처 기능 구현
+  - 스레드 안전한 작업 실행
+  - 코루틴 지원
+  - 비동기 작업 지원
+  - Unity 6.0+ Awaitable 지원
+  - 자동 인스턴스 생성
+  - 씬 전환 시 유지
+
+- 안전성 기능
+  - 도메인 리로드 대응
+  - 중복 인스턴스 방지
+  - 종료 시 정리
+  - 예외 처리
+
+- 최적화 기능
+  - 메인 스레드 감지
+  - 즉시 실행 최적화
+  - 락 메커니즘
 
 ### Changed
 
+- 초기 릴리스
+
 ### Fixed
+
+- 초기 릴리스
