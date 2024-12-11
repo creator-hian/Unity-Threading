@@ -1,15 +1,78 @@
-# Unity-Package-Base
+# Unity Threading
 
-Unity Package 작성을 위한 Base Repository입니다.
+Unity에서 스레드 관리와 비동기 작업을 위한 종합적인 도구 모음입니다.
 
 ## 요구사항
 
 - Unity 2021.3 이상
 - .NET Standard 2.1
+- Unity 6.0 이상 (Awaitable 기능 사용 시)
 
 ## 개요
 
+Unity에서 멀티스레딩과 비동기 작업을 쉽고 안전하게 처리할 수 있는 도구들을 제공합니다. 메인 스레드 디스패처, 스레드 풀, 태스크 관리 등 다양한 기능을 포함합니다.
+
 ## 주요 기능
+
+### 메인 스레드 디스패처
+
+- 스레드 안전한 작업 실행
+- 코루틴 지원
+- 비동기 작업 지원 (Task 기반)
+- Unity 6.0+ Awaitable 지원
+- 자동 인스턴스 생성
+- 씬 전환 시 유지
+- 도메인 리로드 대응
+
+## 사용 예제
+
+### 기본 사용
+
+```csharp
+// 메인 스레드에서 작업 실행
+UnityMainThreadDispatcher.Instance.Enqueue(() => {
+    // UI 업데이트 등 메인 스레드 작업
+});
+
+// 비동기 작업
+await UnityMainThreadDispatcher.Instance.EnqueueAsync(() => {
+    // 메인 스레드에서 실행될 작업
+});
+
+// 결과값이 필요한 경우
+var result = await UnityMainThreadDispatcher.Instance.EnqueueAsync(() => {
+    return someCalculation();
+});
+
+// 코루틴 실행
+UnityMainThreadDispatcher.Instance.Enqueue(SomeCoroutine());
+
+#if UNITY_2023_1_OR_NEWER
+// Unity 6.0+ Awaitable 지원
+await UnityMainThreadDispatcher.Instance.EnqueueAwaitable(someAwaitable);
+#endif
+```
+
+### 에러 처리
+
+```csharp
+try 
+{
+    await UnityMainThreadDispatcher.Instance.EnqueueAsync(() => {
+        // 예외가 발생할 수 있는 작업
+    });
+}
+catch (Exception ex)
+{
+    Debug.LogException(ex);
+}
+```
+
+## 스레드 안전성
+
+- 모든 public API는 스레드로부터 안전합니다.
+- 큐 조작은 lock으로 보호됩니다.
+- 도메인 리로드 시 안전하게 정리됩니다.
 
 ## 설치 방법
 
@@ -43,7 +106,7 @@ https://github.com/creator-hian/Unity-Common.git
 ```json
 {
   "dependencies": {
-    // "com.creator-hian.unity.common": "https://github.com/creator-hian/Unity-Common.git",
+    "com.creator-hian.unity.threading": "hhttps://github.com/creator-hian/Unity-Threading.git",
     ...
   }
 }
@@ -56,7 +119,7 @@ https://github.com/creator-hian/Unity-Common.git
 ```json
 {
   "dependencies": {
-    // "com.creator-hian.unity.common": "https://github.com/creator-hian/Unity-Common.git#0.0.1",
+     "com.creator-hian.unity.threading": "hhttps://github.com/creator-hian/Unity-Threading.git#0.0.1",
     ...
   }
 }
@@ -69,7 +132,6 @@ https://github.com/creator-hian/Unity-Common.git
 ## 문서
 
 각 기능에 대한 자세한 설명은 해당 기능의 README를 참조하세요:
-
 
 ## 원작성자
 

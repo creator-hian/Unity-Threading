@@ -1,23 +1,24 @@
 {
-  "name": "com.creator-hian.unity.package-sample",
+  "name": "com.creator-hian.unity.threading",
   "version": "0.0.1",
-  "displayName": "Hian Package Sample",
-  "unity": "2022.3",
+  "displayName": "Hian Unity Threading",
+  "unity": "2021.3",
   "keywords": [
-    "Hian"
+    "Hian",
+    "Threading"
   ],
   "author": {
     "name": "creator-hian",
     "email": "shahian12@gmail.com",
     "url": "https://github.com/creator-hian"
   },
-  "description": "Unity Package 작성을 위한 Base Repository입니다.",
+  "description": "Unity에서 스레드 관리와 비동기 작업을 위한 도구 모음",
   "dependencies": {},
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/@creator-hian"
   },
   "repository": {
-    // "type": "git",
-    // "url": "git+https://github.com/creator-hian/Unity-Common.git"
+    "type": "git",
+    "url": "git+https://github.com/creator-hian/Unity-Threading.git"
   }
 }
