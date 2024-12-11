@@ -19,6 +19,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/creator-hian/Unity-MainThreadDispatcher.git"
+    "url": "git+https://github.com/creator-hian/Unity-Threading.git"
   }
 }

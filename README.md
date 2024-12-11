@@ -106,7 +106,7 @@ https://github.com/creator-hian/Unity-Common.git
 ```json
 {
   "dependencies": {
-    "com.creator-hian.unity.main-thread-dispatcher": "hhttps://github.com/creator-hian/Unity-MainThreadDispatcher.git",
+    "com.creator-hian.unity.threading": "hhttps://github.com/creator-hian/Unity-Threading.git",
     ...
   }
 }
@@ -119,7 +119,7 @@ https://github.com/creator-hian/Unity-Common.git
 ```json
 {
   "dependencies": {
-     "com.creator-hian.unity.main-thread-dispatcher": "hhttps://github.com/creator-hian/Unity-MainThreadDispatcher.git#0.0.1",
+     "com.creator-hian.unity.threading": "hhttps://github.com/creator-hian/Unity-Threading.git#0.0.1",
     ...
   }
 }
