@@ -88,7 +88,7 @@ catch (Exception ex)
 1. Unity 에디터에서 Window > Package Manager를 엽니다.
 2. 좌측 상단의 + 버튼을 클릭하고 "Add package from git URL"을 선택합니다.
 
-   ![Package Manager Add Git URL](./Document~/images/upm-ui-giturl.png)
+   ![Package Manager Add Git URL](.images/upm-ui-giturl.png)
 
 3. 다음 URL을 입력합니다:
 
@@ -98,7 +98,7 @@ https://github.com/creator-hian/Unity-Common.git
 
 4. 'Add' 버튼을 클릭합니다.
 
-   ![Package Manager Add Button](./Document~/images/upm-ui-giturl-add.png)
+   ![Package Manager Add Button](.images/upm-ui-giturl.png)
 
 #### 설치 방법 2: manifest.json 직접 수정
 
