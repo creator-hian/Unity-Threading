@@ -464,7 +464,9 @@ namespace Hian.Threading
                 _executionQueue?.Clear();
                 _mainThreadId = null;
 
+                #if UNITY_INCLUDE_TESTS
                 Debug.Log("UnityMainThreadDispatcher: 도메인 리로드로 인해 정적 변수가 초기화되었습니다.");
+                #endif
             }
         }
         #endif
