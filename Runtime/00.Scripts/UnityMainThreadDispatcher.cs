@@ -30,9 +30,8 @@ namespace Hian.Threading
         /// <summary>
         /// 메인 스레드에서 실행 중인지 확인
         /// </summary>
-        private bool IsMainThread => 
-            _mainThreadId.HasValue && 
-            Thread.CurrentThread.ManagedThreadId == _mainThreadId.Value;
+        private bool IsMainThread =>
+            _mainThreadId.HasValue && Thread.CurrentThread.ManagedThreadId == _mainThreadId.Value;
         private static int? _mainThreadId;
 
         /// <summary>
@@ -51,17 +50,21 @@ namespace Hian.Threading
             {
                 if (_isQuitting)
                 {
-                    Debug.LogWarning("UnityMainThreadDispatcher: 애플리케이션 종료 중에는 접근할 수 없습니다.");
+                    Debug.LogWarning(
+                        "UnityMainThreadDispatcher: 애플리케이션 종료 중에는 접근할 수 없습니다."
+                    );
                     return null;
                 }
 
-                #if UNITY_EDITOR
+#if UNITY_EDITOR
                 if (!Application.isPlaying)
                 {
-                    Debug.LogError("UnityMainThreadDispatcher: 플레이 모드에서만 사용할 수 있습니다.");
+                    Debug.LogError(
+                        "UnityMainThreadDispatcher: 플레이 모드에서만 사용할 수 있습니다."
+                    );
                     return null;
                 }
-                #endif
+#endif
 
                 if (_instance == null && !_isCreating)
                 {
@@ -88,7 +91,7 @@ namespace Hian.Threading
         /// </remarks>
         private void Update()
         {
-            if (!enabled || !gameObject.activeInHierarchy) 
+            if (!enabled || !gameObject.activeInHierarchy)
                 return;
 
             lock (_executionQueue)
@@ -125,11 +128,13 @@ namespace Hian.Threading
         /// <exception cref="ObjectDisposedException">디스패처가 제거된 상태인 경우</exception>
         public void Enqueue(Action action)
         {
-            if (action == null) 
+            if (action == null)
                 throw new ArgumentNullException(nameof(action));
 
             if (_isQuitting)
-                throw new InvalidOperationException("애플리케이션 종료 중에는 작업을 추가할 수 없습니다.");
+                throw new InvalidOperationException(
+                    "애플리케이션 종료 중에는 작업을 추가할 수 없습니다."
+                );
 
             if (_instance == null)
                 throw new ObjectDisposedException(nameof(UnityMainThreadDispatcher));
@@ -163,7 +168,7 @@ namespace Hian.Threading
         /// <exception cref="InvalidOperationException">GameObject가 비활성화된 상태인 경우</exception>
         public void Enqueue(IEnumerator coroutine)
         {
-            if (coroutine == null) 
+            if (coroutine == null)
                 throw new ArgumentNullException(nameof(coroutine));
 
             if (!gameObject.activeInHierarchy)
@@ -172,10 +177,12 @@ namespace Hian.Threading
             if (!enabled)
                 throw new InvalidOperationException("컴포넌트가 비활성화되어 있습니다.");
 
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (!Application.isPlaying)
-                throw new InvalidOperationException("플레이 모드에서만 코루틴을 실행할 수 있습니다.");
-            #endif
+                throw new InvalidOperationException(
+                    "플레이 모드에서만 코루틴을 실행할 수 있습니다."
+                );
+#endif
 
             Enqueue(() => StartCoroutine(coroutine));
         }
@@ -265,9 +272,14 @@ namespace Hian.Threading
                 }
             }
         }
+
+        public void Post(Action action, object state)
+        {
+            Enqueue(() => action());
+        }
         #endregion
 
-        #if UNITY_2023_1_OR_NEWER
+#if UNITY_2023_1_OR_NEWER
         /// <summary>
         /// Unity Awaitable 작업을 메인 스레드에서 실행합니다.
         /// </summary>
@@ -279,10 +291,14 @@ namespace Hian.Threading
         public async Task<T> EnqueueAwaitable<T>(Awaitable<T> awaitable)
         {
             if (!Application.isPlaying)
-                throw new InvalidOperationException("플레이 모드에서만 Awaitable을 실행할 수 있습니다.");
+                throw new InvalidOperationException(
+                    "플레이 모드에서만 Awaitable을 실행할 수 있습니다."
+                );
 
-            if (awaitable == null) throw new ArgumentNullException(nameof(awaitable));
-            if (_instance == null) throw new ObjectDisposedException(nameof(UnityMainThreadDispatcher));
+            if (awaitable == null)
+                throw new ArgumentNullException(nameof(awaitable));
+            if (_instance == null)
+                throw new ObjectDisposedException(nameof(UnityMainThreadDispatcher));
 
             var tcs = new TaskCompletionSource<T>();
 
@@ -311,8 +327,10 @@ namespace Hian.Threading
         /// <exception cref="ObjectDisposedException">디스패처가 제거된 상태인 경우</exception>
         public async Task EnqueueAwaitable(Awaitable awaitable)
         {
-            if (awaitable == null) throw new ArgumentNullException(nameof(awaitable));
-            if (_instance == null) throw new ObjectDisposedException(nameof(UnityMainThreadDispatcher));
+            if (awaitable == null)
+                throw new ArgumentNullException(nameof(awaitable));
+            if (_instance == null)
+                throw new ObjectDisposedException(nameof(UnityMainThreadDispatcher));
 
             var tcs = new TaskCompletionSource<bool>();
 
@@ -331,14 +349,14 @@ namespace Hian.Threading
 
             await tcs.Task;
         }
-        #endif
+#endif
 
         #region Instance Management
         /// <summary>
         /// 디스패처 인스턴스를 생성하거나 찾습니다.
         /// </summary>
         /// <remarks>
-        /// 이미 존재하는 인스턴스를 찾아 반환하거나, 
+        /// 이미 존재하는 인스턴스를 찾아 반환하거나,
         /// 없는 경우 새로운 GameObject를 생성하여 컴포넌트를 추가합니다.
         /// </remarks>
         /// <exception cref="InvalidOperationException">
@@ -346,26 +364,30 @@ namespace Hian.Threading
         /// </exception>
         private static void CreateInstance()
         {
-            try 
+            try
             {
                 if (!Application.isPlaying)
-                    throw new InvalidOperationException("플레이 모드에서만 인스턴스를 생성할 수 있습니다.");
+                    throw new InvalidOperationException(
+                        "플레이 모드에서만 인스턴스를 생성할 수 있습니다."
+                    );
 
                 _instance = FindFirstObjectByType<UnityMainThreadDispatcher>();
 
-                if (_instance != null) return;
+                if (_instance != null)
+                    return;
 
                 var existingGO = GameObject.Find("[UnityMainThreadDispatcher]");
                 if (existingGO != null)
                 {
                     _instance = existingGO.GetComponent<UnityMainThreadDispatcher>();
-                    if (_instance != null) return;
+                    if (_instance != null)
+                        return;
                 }
 
                 var go = new GameObject("[UnityMainThreadDispatcher]");
                 _instance = go.AddComponent<UnityMainThreadDispatcher>();
                 DontDestroyOnLoad(go);
-                
+
                 Debug.Log("UnityMainThreadDispatcher: 새 인스턴스가 생성되었습니다.");
             }
             catch (Exception ex)
@@ -390,13 +412,18 @@ namespace Hian.Threading
                 _mainThreadId = Thread.CurrentThread.ManagedThreadId;
             }
 
-            var dispatchers = FindObjectsByType<UnityMainThreadDispatcher>(FindObjectsSortMode.None);
-            
+            var dispatchers = FindObjectsByType<UnityMainThreadDispatcher>(
+                FindObjectsSortMode.None
+            );
+
             if (dispatchers.Length > 1)
             {
                 foreach (var dispatcher in dispatchers)
                 {
-                    if (dispatcher != this && dispatcher.gameObject.name == "[UnityMainThreadDispatcher]")
+                    if (
+                        dispatcher != this
+                        && dispatcher.gameObject.name == "[UnityMainThreadDispatcher]"
+                    )
                     {
                         Destroy(gameObject);
                         return;
@@ -447,10 +474,10 @@ namespace Hian.Threading
         }
         #endregion
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         /// <summary>
         /// 도메인 리로드 시 정적 변수들을 초기화합니다.
-        /// Unity 에디터에서 플레이 모드 진입/종료, 스크립트 컴파일, 
+        /// Unity 에디터에서 플레이 모드 진입/종료, 스크립트 컴파일,
         /// 에셋 리임포트 등의 상황에서 호출됩니다.
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -464,11 +491,13 @@ namespace Hian.Threading
                 _executionQueue?.Clear();
                 _mainThreadId = null;
 
-                #if UNITY_INCLUDE_TESTS
-                Debug.Log("UnityMainThreadDispatcher: 도메인 리로드로 인해 정적 변수가 초기화되었습니다.");
-                #endif
+#if UNITY_INCLUDE_TESTS
+                Debug.Log(
+                    "UnityMainThreadDispatcher: 도메인 리로드로 인해 정적 변수가 초기화되었습니다."
+                );
+#endif
             }
         }
-        #endif
+#endif
     }
 }
