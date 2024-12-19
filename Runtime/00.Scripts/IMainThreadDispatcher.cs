@@ -47,7 +47,7 @@ namespace Hian.Threading
         /// </summary>
         int QueuedActions { get; }
 
-        #if UNITY_2023_1_OR_NEWER
+#if UNITY_2023_1_OR_NEWER
         /// <summary>
         /// Unity Awaitable 작업을 메인 스레드에서 실행합니다.
         /// </summary>
@@ -62,6 +62,8 @@ namespace Hian.Threading
         /// <param name="awaitable">실행할 Unity Awaitable 작업</param>
         /// <returns>작업 완료를 나타내는 Task</returns>
         Task EnqueueAwaitable(Awaitable awaitable);
-        #endif
+#endif
+
+        void Post(Action action, object state);
     }
 }
