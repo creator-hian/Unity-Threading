@@ -41,7 +41,9 @@ All notable changes to this project will be documented in this file.
   - 즉시 실행 최적화
   - 락 메커니즘
 
+<!-- markdownlint-disable MD024 -->
 ### Changed
+<!-- markdownlint-enable MD024 -->
 
 - 초기 릴리스
 
