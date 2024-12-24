@@ -92,7 +92,9 @@ namespace Hian.Threading
         private void Update()
         {
             if (!enabled || !gameObject.activeInHierarchy)
+            {
                 return;
+            }
 
             lock (_executionQueue)
             {
@@ -100,7 +102,7 @@ namespace Hian.Threading
                 {
                     while (_executionQueue.Count > 0 && !_isQuitting)
                     {
-                        var action = _executionQueue.Dequeue();
+                        Action action = _executionQueue.Dequeue();
                         try
                         {
                             action?.Invoke();
@@ -129,15 +131,21 @@ namespace Hian.Threading
         public void Enqueue(Action action)
         {
             if (action == null)
+            {
                 throw new ArgumentNullException(nameof(action));
+            }
 
             if (_isQuitting)
+            {
                 throw new InvalidOperationException(
                     "애플리케이션 종료 중에는 작업을 추가할 수 없습니다."
                 );
+            }
 
             if (_instance == null)
+            {
                 throw new ObjectDisposedException(nameof(UnityMainThreadDispatcher));
+            }
 
             // 이미 메인 스레드라면 즉시 실행
             if (IsMainThread)
@@ -169,19 +177,27 @@ namespace Hian.Threading
         public void Enqueue(IEnumerator coroutine)
         {
             if (coroutine == null)
+            {
                 throw new ArgumentNullException(nameof(coroutine));
+            }
 
             if (!gameObject.activeInHierarchy)
+            {
                 throw new InvalidOperationException("GameObject가 비활성화되어 있습니다.");
+            }
 
             if (!enabled)
+            {
                 throw new InvalidOperationException("컴포넌트가 비활성화되어 있습니다.");
+            }
 
 #if UNITY_EDITOR
             if (!Application.isPlaying)
+            {
                 throw new InvalidOperationException(
                     "플레이 모드에서만 코루틴을 실행할 수 있습니다."
                 );
+            }
 #endif
 
             Enqueue(() => StartCoroutine(coroutine));
@@ -196,18 +212,18 @@ namespace Hian.Threading
         /// <exception cref="ObjectDisposedException">디스패처가 제거된 상태인 경우</exception>
         public Task EnqueueAsync(Action action)
         {
-            var tcs = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
 
             Enqueue(() =>
             {
                 try
                 {
                     action();
-                    tcs.TrySetResult(true);
+                    _ = tcs.TrySetResult(true);
                 }
                 catch (Exception ex)
                 {
-                    tcs.TrySetException(ex);
+                    _ = tcs.TrySetException(ex);
                 }
             });
 
@@ -224,18 +240,18 @@ namespace Hian.Threading
         /// <exception cref="ObjectDisposedException">디스패처가 제거된 상태인 경우</exception>
         public Task<T> EnqueueAsync<T>(Func<T> function)
         {
-            var tcs = new TaskCompletionSource<T>();
+            TaskCompletionSource<T> tcs = new TaskCompletionSource<T>();
 
             Enqueue(() =>
             {
                 try
                 {
-                    var result = function();
-                    tcs.TrySetResult(result);
+                    T result = function();
+                    _ = tcs.TrySetResult(result);
                 }
                 catch (Exception ex)
                 {
-                    tcs.TrySetException(ex);
+                    _ = tcs.TrySetException(ex);
                 }
             });
 
@@ -291,27 +307,34 @@ namespace Hian.Threading
         public async Task<T> EnqueueAwaitable<T>(Awaitable<T> awaitable)
         {
             if (!Application.isPlaying)
+            {
                 throw new InvalidOperationException(
                     "플레이 모드에서만 Awaitable을 실행할 수 있습니다."
                 );
+            }
 
             if (awaitable == null)
+            {
                 throw new ArgumentNullException(nameof(awaitable));
+            }
+
             if (_instance == null)
+            {
                 throw new ObjectDisposedException(nameof(UnityMainThreadDispatcher));
+            }
 
-            var tcs = new TaskCompletionSource<T>();
+            TaskCompletionSource<T> tcs = new TaskCompletionSource<T>();
 
-            await EnqueueAsync(async () =>
+            _ = await EnqueueAsync(async () =>
             {
                 try
                 {
-                    var result = await awaitable;
-                    tcs.TrySetResult(result);
+                    T result = await awaitable;
+                    _ = tcs.TrySetResult(result);
                 }
                 catch (Exception ex)
                 {
-                    tcs.TrySetException(ex);
+                    _ = tcs.TrySetException(ex);
                 }
             });
 
@@ -328,26 +351,31 @@ namespace Hian.Threading
         public async Task EnqueueAwaitable(Awaitable awaitable)
         {
             if (awaitable == null)
+            {
                 throw new ArgumentNullException(nameof(awaitable));
+            }
+
             if (_instance == null)
+            {
                 throw new ObjectDisposedException(nameof(UnityMainThreadDispatcher));
+            }
 
-            var tcs = new TaskCompletionSource<bool>();
+            TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
 
-            await EnqueueAsync(async () =>
+            _ = await EnqueueAsync(async () =>
             {
                 try
                 {
                     await awaitable;
-                    tcs.TrySetResult(true);
+                    _ = tcs.TrySetResult(true);
                 }
                 catch (Exception ex)
                 {
-                    tcs.TrySetException(ex);
+                    _ = tcs.TrySetException(ex);
                 }
             });
 
-            await tcs.Task;
+            _ = await tcs.Task;
         }
 #endif
 
@@ -367,24 +395,30 @@ namespace Hian.Threading
             try
             {
                 if (!Application.isPlaying)
+                {
                     throw new InvalidOperationException(
                         "플레이 모드에서만 인스턴스를 생성할 수 있습니다."
                     );
+                }
 
                 _instance = FindFirstObjectByType<UnityMainThreadDispatcher>();
 
                 if (_instance != null)
+                {
                     return;
+                }
 
-                var existingGO = GameObject.Find("[UnityMainThreadDispatcher]");
+                GameObject existingGO = GameObject.Find("[UnityMainThreadDispatcher]");
                 if (existingGO != null)
                 {
                     _instance = existingGO.GetComponent<UnityMainThreadDispatcher>();
                     if (_instance != null)
+                    {
                         return;
+                    }
                 }
 
-                var go = new GameObject("[UnityMainThreadDispatcher]");
+                GameObject go = new GameObject("[UnityMainThreadDispatcher]");
                 _instance = go.AddComponent<UnityMainThreadDispatcher>();
                 DontDestroyOnLoad(go);
 
@@ -412,13 +446,13 @@ namespace Hian.Threading
                 _mainThreadId = Thread.CurrentThread.ManagedThreadId;
             }
 
-            var dispatchers = FindObjectsByType<UnityMainThreadDispatcher>(
+            UnityMainThreadDispatcher[] dispatchers = FindObjectsByType<UnityMainThreadDispatcher>(
                 FindObjectsSortMode.None
             );
 
             if (dispatchers.Length > 1)
             {
-                foreach (var dispatcher in dispatchers)
+                foreach (UnityMainThreadDispatcher dispatcher in dispatchers)
                 {
                     if (
                         dispatcher != this
