@@ -1,13 +1,13 @@
 using System;
 using System.Collections;
-using System.Threading.Tasks;
-using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
-using Hian.Threading;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Hian.Threading;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 public class UnityMainThreadDispatcherTests : MonoBehaviour
 {
@@ -17,7 +17,7 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     [UnitySetUp]
     public IEnumerator Setup()
     {
-        var go = new GameObject("TestRunner");
+        GameObject go = new GameObject("TestRunner");
         _instance = go.AddComponent<UnityMainThreadDispatcherTests>();
         _dispatcher = UnityMainThreadDispatcher.Instance;
         Assert.That(_dispatcher, Is.Not.Null, "Dispatcher should be initialized");
@@ -38,9 +38,9 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     [UnityTest]
     public IEnumerator Enqueue_ShouldExecuteActionOnMainThread()
     {
-        var executed = false;
-        var executedThreadId = -1;
-        var mainThreadId = Thread.CurrentThread.ManagedThreadId;
+        bool executed = false;
+        int executedThreadId = -1;
+        int mainThreadId = Thread.CurrentThread.ManagedThreadId;
 
         _dispatcher.Enqueue(() =>
         {
@@ -57,13 +57,13 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     [UnityTest]
     public IEnumerator Instance_ShouldReturnSameInstance()
     {
-        var instance1 = UnityMainThreadDispatcher.Instance;
-        var instance2 = UnityMainThreadDispatcher.Instance;
-        
+        UnityMainThreadDispatcher instance1 = UnityMainThreadDispatcher.Instance;
+        UnityMainThreadDispatcher instance2 = UnityMainThreadDispatcher.Instance;
+
         Assert.That(instance1, Is.Not.Null);
         Assert.That(instance2, Is.Not.Null);
         Assert.That(instance1, Is.EqualTo(instance2));
-        
+
         yield return null;
     }
 
@@ -71,7 +71,7 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     public IEnumerator Enqueue_WhenNull_ShouldThrowArgumentNullException()
     {
         Action action = null;
-        Assert.Throws<ArgumentNullException>(() => _dispatcher.Enqueue(action));
+        _ = Assert.Throws<ArgumentNullException>(() => _dispatcher.Enqueue(action));
         yield return null;
     }
 
@@ -79,7 +79,7 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     public IEnumerator EnqueueCoroutine_WhenNull_ShouldThrowArgumentNullException()
     {
         IEnumerator coroutine = null;
-        Assert.Throws<ArgumentNullException>(() => _dispatcher.Enqueue(coroutine));
+        _ = Assert.Throws<ArgumentNullException>(() => _dispatcher.Enqueue(coroutine));
         yield return null;
     }
 
@@ -88,26 +88,27 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     {
         for (int i = 0; i < 10; i++)
         {
-            _dispatcher.Enqueue(() => { });
+            _dispatcher.Enqueue(static () => { });
         }
 
         _dispatcher.ClearQueue();
-        yield return null;  // 다음 프레임까지 대기
-        
+        yield return null; // 다음 프레임까지 대기
+
         Assert.That(_dispatcher.QueuedActions, Is.EqualTo(0));
     }
 
     [UnityTest]
     public IEnumerator EnqueueAsync_ShouldHandleExceptions()
     {
-        var expectedException = new Exception("Test Exception");
+        Exception expectedException = new Exception("Test Exception");
         Exception actualException = null;
 
-        _dispatcher.EnqueueAsync(() => throw expectedException)
+        _ = _dispatcher
+            .EnqueueAsync(() => throw expectedException)
             .ContinueWith(t => actualException = t.Exception?.InnerException);
 
-        yield return new WaitForSeconds(0.1f);  // 작업 완료 대기
-        
+        yield return new WaitForSeconds(0.1f); // 작업 완료 대기
+
         Assert.That(actualException, Is.EqualTo(expectedException));
     }
 
@@ -117,23 +118,22 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
         const int expectedResult = 42;
         int? result = null;
 
-        _dispatcher.EnqueueAsync(() => expectedResult)
-            .ContinueWith(t => result = t.Result);
+        _ = _dispatcher.EnqueueAsync(() => expectedResult).ContinueWith(t => result = t.Result);
 
-        yield return new WaitForSeconds(0.1f);  // 작업 완료 대기
-        
+        yield return new WaitForSeconds(0.1f); // 작업 완료 대기
+
         Assert.That(result, Is.EqualTo(expectedResult));
     }
 
-    #if UNITY_2023_1_OR_NEWER
+#if UNITY_2023_1_OR_NEWER
     [UnityTest]
     public IEnumerator EnqueueAwaitable_ShouldExecuteAwaitable()
     {
-        var executed = false;
-        
+        bool executed = false;
+
         async void TestAwaitableAsync()
         {
-            try 
+            try
             {
                 await _dispatcher.EnqueueAwaitable(Awaitable.WaitForSecondsAsync(0.1f));
                 executed = true;
@@ -146,31 +146,31 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
 
         TestAwaitableAsync();
         yield return new WaitForSeconds(0.2f);
-        
+
         Assert.That(executed, Is.True, "Awaitable should be executed");
     }
-    #endif
+#endif
 
     [UnityTest]
     public IEnumerator MultipleThreads_ShouldExecuteActionsInOrder()
     {
-        var executionOrder = new List<int>();
-        var tasks = new List<Task>();
-        var taskCompletionSource = new TaskCompletionSource<bool>();
+        List<int> executionOrder = new List<int>();
+        List<Task> tasks = new List<Task>();
+        TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
 
         // 메인 스레드에서 먼저 작업 추가
         for (int i = 0; i < 5; i++)
         {
-            var index = i;
+            int index = i;
             _dispatcher.Enqueue(() => executionOrder.Add(index));
         }
 
         // 다른 스레드에서 작업 추가
-        Task.Run(() =>
+        _ = Task.Run(() =>
         {
             for (int i = 5; i < 10; i++)
             {
-                var index = i;
+                int index = i;
                 _dispatcher.Enqueue(() => executionOrder.Add(index));
             }
             taskCompletionSource.SetResult(true);
@@ -180,17 +180,25 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
         yield return null; // 다음 프레임까지 대기
 
         Assert.That(executionOrder.Count, Is.EqualTo(10), "모든 작업이 실행되어야 함");
-        
+
         // 메인 스레드 작업이 먼저 실행되고, 그 다음 다른 스레드 작업이 실행되는지 확인
-        Assert.That(executionOrder.Take(5), Is.EqualTo(new[] { 0, 1, 2, 3, 4 }), "메인 스레드 작업이 순서대로 실행되어야 함");
-        Assert.That(executionOrder.Skip(5), Is.EqualTo(new[] { 5, 6, 7, 8, 9 }), "다른 스레드 작업이 순서대로 실행되어야 함");
+        Assert.That(
+            executionOrder.Take(5),
+            Is.EqualTo(new[] { 0, 1, 2, 3, 4 }),
+            "메인 스레드 작업이 순서대로 실행되어야 함"
+        );
+        Assert.That(
+            executionOrder.Skip(5),
+            Is.EqualTo(new[] { 5, 6, 7, 8, 9 }),
+            "다른 스레드 작업이 순서대로 실행되어야 함"
+        );
     }
 
     [UnityTest]
     public IEnumerator WhenGameObjectDisabled_ShouldHandleCoroutineProperly()
     {
-        var executed = false;
-        
+        bool executed = false;
+
         IEnumerator TestCoroutine()
         {
             yield return new WaitForSeconds(0.1f);
@@ -198,9 +206,7 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
         }
 
         _dispatcher.gameObject.SetActive(false);
-        Assert.Throws<InvalidOperationException>(() => 
-            _dispatcher.Enqueue(TestCoroutine())
-        );
+        _ = Assert.Throws<InvalidOperationException>(() => _dispatcher.Enqueue(TestCoroutine()));
 
         yield return null;
         Assert.That(executed, Is.False);
@@ -210,8 +216,10 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     public IEnumerator WhenApplicationQuitting_ShouldRejectNewActions()
     {
         // OnApplicationQuit 시뮬레이션
-        var quitField = typeof(UnityMainThreadDispatcher)
-            .GetField("_isQuitting", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        System.Reflection.FieldInfo quitField = typeof(UnityMainThreadDispatcher).GetField(
+            "_isQuitting",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
         quitField.SetValue(null, true);
 
         Assert.That(UnityMainThreadDispatcher.Instance, Is.Null);
@@ -224,16 +232,17 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     [UnityTest]
     public IEnumerator LongRunningTasks_ShouldNotBlockMainThread()
     {
-        var frameCount = Time.frameCount;
-        var longTaskCompleted = false;
+        int frameCount = Time.frameCount;
+        bool longTaskCompleted = false;
 
-        _dispatcher.EnqueueAsync(() => {
+        _ = _dispatcher.EnqueueAsync(() =>
+        {
             Thread.Sleep(100); // 긴 작업 시뮬레이션
             longTaskCompleted = true;
         });
 
         yield return null;
-        
+
         Assert.That(Time.frameCount, Is.GreaterThan(frameCount), "프레임이 진행되어야 함");
         yield return new WaitUntil(() => longTaskCompleted);
     }
@@ -241,31 +250,33 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     [UnityTest]
     public IEnumerator DomainReload_ShouldResetDispatcher()
     {
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         // 도메인 리로드 시뮬레이션
-        var resetMethod = typeof(UnityMainThreadDispatcher)
-            .GetMethod("ResetStatics", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        System.Reflection.MethodInfo resetMethod = typeof(UnityMainThreadDispatcher).GetMethod(
+            "ResetStatics",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+        );
         resetMethod.Invoke(null, null);
 
         yield return null;
 
-        var newDispatcher = UnityMainThreadDispatcher.Instance;
+        UnityMainThreadDispatcher newDispatcher = UnityMainThreadDispatcher.Instance;
         Assert.That(newDispatcher, Is.Not.Null);
         Assert.That(newDispatcher.QueuedActions, Is.Zero);
-        #else
+#else
         yield return null;
-        #endif
+#endif
     }
 
     [UnityTest]
     public IEnumerator StressTest_MassiveQueueing()
     {
         const int TOTAL_ACTIONS = 1000;
-        var tasks = new List<Task>();
-        var completedCount = 0;
-        var errors = new List<Exception>();
-        var random = new System.Random();
-        var enqueuedCount = 0;
+        List<Task> tasks = new List<Task>();
+        int completedCount = 0;
+        List<Exception> errors = new List<Exception>();
+        System.Random random = new System.Random();
+        int enqueuedCount = 0;
 
         Debug.Log($"스트레스 테스트 시작: {TOTAL_ACTIONS}개의 작업 예약");
 
@@ -273,96 +284,121 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
         const int BATCH_SIZE = 50;
         for (int batch = 0; batch < TOTAL_ACTIONS / BATCH_SIZE; batch++)
         {
-            Debug.Log($"배치 {batch + 1} 시작: {batch * BATCH_SIZE}~{(batch + 1) * BATCH_SIZE - 1}");
-            
+            Debug.Log(
+                $"배치 {batch + 1} 시작: {batch * BATCH_SIZE}~{((batch + 1) * BATCH_SIZE) - 1}"
+            );
+
             for (int i = 0; i < BATCH_SIZE; i++)
             {
-                var currentIndex = batch * BATCH_SIZE + i;
-                tasks.Add(Task.Run(async () =>
-                {
-                    try
+                int currentIndex = (batch * BATCH_SIZE) + i;
+                tasks.Add(
+                    Task.Run(async () =>
                     {
-                        await Task.Delay(random.Next(10, 50));
-                        if (_dispatcher != null)
+                        try
                         {
-                            var action = new Action(() =>
+                            await Task.Delay(random.Next(10, 50));
+                            if (_dispatcher != null)
                             {
-                                try
+                                Action action = new Action(() =>
                                 {
-                                    if (_dispatcher != null)
+                                    try
                                     {
-                                        var currentEnqueued = Interlocked.Increment(ref enqueuedCount);
-                                        Debug.Log($"작업 실행 중: {currentEnqueued}/{TOTAL_ACTIONS}");
-                                        
-                                        _dispatcher.StartCoroutine(SimulateNetworkLatency());
-                                        var count = Interlocked.Increment(ref completedCount);
-                                        Debug.Log($"작업 완료: {count}/{TOTAL_ACTIONS}");
+                                        if (_dispatcher != null)
+                                        {
+                                            int currentEnqueued = Interlocked.Increment(
+                                                ref enqueuedCount
+                                            );
+                                            Debug.Log(
+                                                $"작업 실행 중: {currentEnqueued}/{TOTAL_ACTIONS}"
+                                            );
+
+                                            _ = _dispatcher.StartCoroutine(
+                                                SimulateNetworkLatency()
+                                            );
+                                            int count = Interlocked.Increment(ref completedCount);
+                                            Debug.Log($"작업 완료: {count}/{TOTAL_ACTIONS}");
+                                        }
                                     }
-                                }
-                                catch (Exception ex)
+                                    catch (Exception ex)
+                                    {
+                                        Debug.LogError($"작업 실행 중 오류: {ex.Message}");
+                                        lock (errors)
+                                        {
+                                            errors.Add(ex);
+                                        }
+                                    }
+                                });
+
+                                _dispatcher.Enqueue(action);
+                            }
+                            else
+                            {
+                                lock (errors)
                                 {
-                                    Debug.LogError($"작업 실행 중 오류: {ex.Message}");
-                                    lock (errors) errors.Add(ex);
+                                    errors.Add(
+                                        new InvalidOperationException("Dispatcher is not available")
+                                    );
+                                    Debug.LogError("디스패처 없음 오류 발생");
                                 }
-                            });
-                            
-                            _dispatcher.Enqueue(action);
+                            }
                         }
-                        else
+                        catch (Exception ex)
                         {
                             lock (errors)
                             {
-                                errors.Add(new InvalidOperationException("Dispatcher is not available"));
-                                Debug.LogError("디스패처 없음 오류 발생");
+                                errors.Add(ex);
+                                Debug.LogError($"예상치 못한 오류 발생: {ex.Message}");
                             }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        lock (errors)
-                        {
-                            errors.Add(ex);
-                            Debug.LogError($"예상치 못한 오류 발생: {ex.Message}");
-                        }
-                    }
-                }));
+                    })
+                );
             }
 
             // 각 배치 완료 후 잠시 대기
             yield return new WaitForSeconds(0.1f);
-            Debug.Log($"배치 {batch + 1} 예약 완료. 현재까지 완료된 작업: {completedCount}/{TOTAL_ACTIONS}");
+            Debug.Log(
+                $"배치 {batch + 1} 예약 완료. 현재까지 완료된 작업: {completedCount}/{TOTAL_ACTIONS}"
+            );
         }
 
         if (_dispatcher != null)
         {
             Debug.Log("GameObject 토글 코루틴 시작");
-            _dispatcher.StartCoroutine(ToggleGameObjectRoutine());
+            _ = _dispatcher.StartCoroutine(ToggleGameObjectRoutine());
         }
 
-        var timeout = Time.time + 30f; // 30초 타임아웃 설정
+        float timeout = Time.time + 30f; // 30초 타임아웃 설정
         Debug.Log("모든 태스크 완료 대기 중...");
-        
+
         while (!tasks.All(t => t.IsCompleted) && Time.time < timeout)
         {
-            Debug.Log($"진행 상황 - 완료: {completedCount}/{TOTAL_ACTIONS}, 에러: {errors.Count}, 큐잉: {enqueuedCount}");
+            Debug.Log(
+                $"진행 상황 - 완료: {completedCount}/{TOTAL_ACTIONS}, 에러: {errors.Count}, 큐잉: {enqueuedCount}"
+            );
             yield return new WaitForSeconds(1f);
         }
-        
-        Debug.Log($"태스크 완료됨. 작업 결과 대기 중... (완료: {completedCount}/{TOTAL_ACTIONS}, 에러: {errors.Count})");
-        
+
+        Debug.Log(
+            $"태스크 완료됨. 작업 결과 대기 중... (완료: {completedCount}/{TOTAL_ACTIONS}, 에러: {errors.Count})"
+        );
+
         timeout = Time.time + 30f;
         while (completedCount < TOTAL_ACTIONS && !errors.Any() && Time.time < timeout)
         {
-            Debug.Log($"작업 완료 대기 중 - 완료: {completedCount}/{TOTAL_ACTIONS}, 에러: {errors.Count}");
+            Debug.Log(
+                $"작업 완료 대기 중 - 완료: {completedCount}/{TOTAL_ACTIONS}, 에러: {errors.Count}"
+            );
             yield return new WaitForSeconds(1f);
         }
 
-        Debug.Log($"테스트 종료 - 완료된 작업: {completedCount}/{TOTAL_ACTIONS}, 에러 수: {errors.Count}");
+        Debug.Log(
+            $"테스트 종료 - 완료된 작업: {completedCount}/{TOTAL_ACTIONS}, 에러 수: {errors.Count}"
+        );
         if (Time.time >= timeout)
         {
             Assert.Fail($"테스트 타임아웃 - 완료된 작업: {completedCount}/{TOTAL_ACTIONS}");
         }
-        
+
         Assert.That(errors, Is.Empty, "에러 없이 실행되어야 함");
         Assert.That(completedCount, Is.EqualTo(TOTAL_ACTIONS), "모든 작업이 실행되어야 함");
         Assert.That(_dispatcher, Is.Not.Null, "디스패처는 살아있어야 함");
@@ -372,19 +408,23 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     public IEnumerator ChaosTest_RandomOperations()
     {
         const int TOTAL_OPERATIONS = 50;
-        var random = new System.Random();
-        var operations = new List<(string name, Func<IEnumerator> operation)>
+        System.Random random = new System.Random();
+        List<(string name, Func<IEnumerator> operation)> operations = new List<(
+            string name,
+            Func<IEnumerator> operation
+        )>
         {
             ("GC", SimulateGarbageCollection),
             ("씬 리로드", SimulateSceneReload),
             ("앱 일시정지", SimulateAppPause),
             ("네트워크 지연", SimulateNetworkLatency),
-            ("메모리 압박", SimulateMemoryPressure)
+            ("메모리 압박", SimulateMemoryPressure),
         };
-        
-        var completedOps = 0;
-        var errors = new List<Exception>();
-        var operationStatus = new Dictionary<int, (string name, bool completed)>();
+
+        int completedOps = 0;
+        List<Exception> errors = new List<Exception>();
+        Dictionary<int, (string name, bool completed)> operationStatus =
+            new Dictionary<int, (string name, bool completed)>();
 
         Debug.Log($"카오스 테스트 시작: {TOTAL_OPERATIONS}개의 랜덤 작업 실행");
         Debug.Log($"사용 가능한 작업 타입: {string.Join(", ", operations.Select(o => o.name))}");
@@ -392,38 +432,46 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
         // 작업 상태 초기화
         for (int i = 0; i < TOTAL_OPERATIONS; i++)
         {
-            var opIndex = random.Next(operations.Count);
+            int opIndex = random.Next(operations.Count);
             operationStatus[i] = (operations[opIndex].name, false);
         }
 
         // 랜덤하게 작업 실행
         for (int i = 0; i < TOTAL_OPERATIONS; i++)
         {
-            var opIndex = random.Next(operations.Count);
-            var (opName, operation) = operations[opIndex];
-            
+            int opIndex = random.Next(operations.Count);
+            (string opName, Func<IEnumerator> operation) = operations[opIndex];
+
             if (_dispatcher != null)
             {
                 Debug.Log($"작업 {i + 1}/{TOTAL_OPERATIONS} 예약 중... (작업 종류: {opName})");
-                
-                _dispatcher.StartCoroutine(ExecuteWithErrorHandling(
-                    operation(),
-                    () => {
-                        lock (operationStatus)
+
+                _ = _dispatcher.StartCoroutine(
+                    ExecuteWithErrorHandling(
+                        operation(),
+                        () =>
                         {
-                            operationStatus[i] = (opName, true);
-                            var count = Interlocked.Increment(ref completedOps);
-                            Debug.Log($"작업 {i + 1} ({opName}) 완료 - 전체 진행: {count}/{TOTAL_OPERATIONS}");
-                        }
-                    },
-                    ex => {
-                        lock (errors)
+                            lock (operationStatus)
+                            {
+                                operationStatus[i] = (opName, true);
+                                int count = Interlocked.Increment(ref completedOps);
+                                Debug.Log(
+                                    $"작업 {i + 1} ({opName}) 완료 - 전체 진행: {count}/{TOTAL_OPERATIONS}"
+                                );
+                            }
+                        },
+                        ex =>
                         {
-                            errors.Add(ex);
-                            Debug.LogError($"작업 {i + 1} ({opName}) 실행 중 오류: {ex.Message}");
+                            lock (errors)
+                            {
+                                errors.Add(ex);
+                                Debug.LogError(
+                                    $"작업 {i + 1} ({opName}) 실행 중 오류: {ex.Message}"
+                                );
+                            }
                         }
-                    }
-                ));
+                    )
+                );
             }
             else
             {
@@ -435,38 +483,44 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
 
-        var timeout = Time.time + 30f; // 30초 타임아웃
+        float timeout = Time.time + 30f; // 30초 타임아웃
         Debug.Log("작업 완료 대기 중...");
 
         while (completedOps < TOTAL_OPERATIONS && !errors.Any() && Time.time < timeout)
         {
             lock (operationStatus)
             {
-                var incomplete = operationStatus
+                List<string> incomplete = operationStatus
                     .Where(kvp => !kvp.Value.completed)
                     .Select(kvp => $"{kvp.Key + 1}({kvp.Value.name})")
                     .ToList();
 
                 if (incomplete.Any())
                 {
-                    Debug.Log($"진행 상황 - 완료: {completedOps}/{TOTAL_OPERATIONS}, 에러: {errors.Count}");
+                    Debug.Log(
+                        $"진행 상황 - 완료: {completedOps}/{TOTAL_OPERATIONS}, 에러: {errors.Count}"
+                    );
                     Debug.Log($"미완료 작업: {string.Join(", ", incomplete)}");
                 }
             }
-            
+
             yield return new WaitForSeconds(1f);
         }
 
-        Debug.Log($"테스트 종료 - 예료된 작업: {completedOps}/{TOTAL_OPERATIONS}, 에러 수: {errors.Count}");
-        
+        Debug.Log(
+            $"테스트 종료 - 예료된 작업: {completedOps}/{TOTAL_OPERATIONS}, 에러 수: {errors.Count}"
+        );
+
         if (Time.time >= timeout)
         {
-            var incompleteOps = operationStatus
+            List<string> incompleteOps = operationStatus
                 .Where(kvp => !kvp.Value.completed)
                 .Select(kvp => $"{kvp.Key + 1}({kvp.Value.name})")
                 .ToList();
-                
-            Assert.Fail($"테스트 타임아웃 - 완료된 작업: {completedOps}/{TOTAL_OPERATIONS}\n미완료 작업: {string.Join(", ", incompleteOps)}");
+
+            Assert.Fail(
+                $"테스트 타임아웃 - 완료된 작업: {completedOps}/{TOTAL_OPERATIONS}\n미완료 작업: {string.Join(", ", incompleteOps)}"
+            );
         }
 
         Assert.That(errors, Is.Empty, "에러 없이 실행되어야 함");
@@ -517,13 +571,16 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
     private IEnumerator SimulateMemoryPressure()
     {
         Debug.Log("메모리 압박 시뮬레이션 시작");
-        var temp = new byte[1024 * 1024]; // 1MB
+        _ = new byte[1024 * 1024]; // 1MB
         yield return new WaitForSeconds(0.1f);
-        temp = null;
         Debug.Log("메모리 압박 시뮬레이션 완료");
     }
 
-    private IEnumerator ExecuteWithErrorHandling(IEnumerator routine, Action onComplete, Action<Exception> onError)
+    private IEnumerator ExecuteWithErrorHandling(
+        IEnumerator routine,
+        Action onComplete,
+        Action<Exception> onError
+    )
     {
         if (_dispatcher == null)
         {
@@ -562,7 +619,9 @@ public class UnityMainThreadDispatcherTests : MonoBehaviour
 
         if (!isComplete && _dispatcher == null)
         {
-            onError?.Invoke(new InvalidOperationException("Dispatcher was destroyed during execution"));
+            onError?.Invoke(
+                new InvalidOperationException("Dispatcher was destroyed during execution")
+            );
         }
     }
 }
